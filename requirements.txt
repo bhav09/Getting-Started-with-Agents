@@ -1,0 +1,6 @@
+streamlit
+google-cloud-vertex-ai
+google-cloud-aiplatform
+google-adk
+google-genai
+python-dotenv
