@@ -3,7 +3,7 @@ import streamlit as st
 import asyncio
 import base64
 from dotenv import load_dotenv
-from google.adk.agents import Agent
+from google.adk.agents import Agent, SequentialAgent
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.adk.tools import google_search
@@ -28,7 +28,7 @@ artifact_recognition_agent = Agent(
     instruction="Identify the cultural artifact in the image.",
     tools=[google_search],
     generate_content_config=types.GenerateContentConfig(
-        max_output_tokens=512,
+        max_output_tokens=1024,
         temperature=0.2,
         top_p=0.95,
     ),
@@ -37,39 +37,43 @@ artifact_recognition_agent = Agent(
 historical_context_agent = Agent(
     model=MODEL_GEMINI_FLASH,
     name="historical_context_agent",
-    description="Provides historical background of the artifact.",
+    description="Provides historical background of the artifact. Give detailed response. Give interesting facts.",
     instruction="Provide historical context for the identified artifact.",
-    tools=[google_search],
+    tools=[],
     generate_content_config=types.GenerateContentConfig(
         max_output_tokens=1024,
         temperature=0.2,
-        top_p=0.95,
     ),
 )
 
 cultural_significance_agent = Agent(
     model=MODEL_GEMINI_FLASH,
     name="cultural_significance_agent",
-    description="Explains the cultural significance of the artifact.",
+    description="Explains the cultural significance of the artifact. Give detailed response.",
     instruction="Explain the cultural significance of the artifact.",
-    tools=[google_search],
+    tools=[],
     generate_content_config=types.GenerateContentConfig(
         max_output_tokens=1024,
         temperature=0.2,
-        top_p=0.95,
+    ),
+)
+
+cultural_significance_agent = Agent(
+    model=MODEL_GEMINI_FLASH,
+    name="cultural_significance_agent",
+    description="Explains the cultural significance of the artifact. Give detailed response.",
+    instruction="Explain the cultural significance of the artifact.",
+    tools=[],
+    generate_content_config=types.GenerateContentConfig(
+        max_output_tokens=1024,
+        temperature=0.2,
     ),
 )
 
 # Root Agent
-root_agent = Agent(
-    model=MODEL_GEMINI_FLASH,
+root_agent = SequentialAgent(
     name="culture_explorer_agent",
-    description="Explores cultural artifacts through images.",
-    instruction="""
-    1. Use artifact_recognition_agent to identify the artifact from the image.
-    2. Use historical_context_agent to provide background information.
-    3. Use cultural_significance_agent to explain its cultural importance.
-    """,
+    description="Explores cultural artifacts through images. Give detailed responses. Give interesting facts.",
     sub_agents=[
         artifact_recognition_agent,
         historical_context_agent,
@@ -92,7 +96,7 @@ st.write("Upload an image of a cultural artifact to learn about its history and 
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    st.image(uploaded_file, caption='Uploaded Image.', use_column_width=True)
+    st.image(uploaded_file, caption='Uploaded Image.')
     if st.button("Analyze Artifact"):
         image_bytes = uploaded_file.read()
         image_b64 = base64.b64encode(image_bytes).decode()
